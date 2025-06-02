@@ -19,7 +19,7 @@ public class Fonctionnalite {
 	private String type;
 	 // @Column(length = 1000)
 	private String description;
-	private boolean prenium;
+	private boolean premium;
 	private boolean statut;
 
 }

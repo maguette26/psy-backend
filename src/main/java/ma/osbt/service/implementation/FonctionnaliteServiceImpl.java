@@ -41,7 +41,7 @@ public class FonctionnaliteServiceImpl implements FonctionnaliteService{
 		        f.setNom(fonctionnalite.getNom());
 		        f.setType(fonctionnalite.getType());
 		        f.setDescription(fonctionnalite.getDescription());
-		        f.setPrenium(fonctionnalite.isPrenium());
+		        f.setPremium(fonctionnalite.isPremium());
 		        f.setStatut(fonctionnalite.isStatut());
 		        fonctionnaliteRepository.save(f);
 		    } else {

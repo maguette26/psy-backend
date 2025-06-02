@@ -1,7 +1,6 @@
 package ma.osbt.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -13,7 +12,7 @@ import ma.osbt.entitie.Role;
 public interface PersonneRepository extends JpaRepository<Personne,Long> {
 
 	List<Personne> findByRoleIn(List<Role> roles);
-	//Optional<Personne> findByUtilisateurId(Long utilisateurId);
+	 
 
 
 }

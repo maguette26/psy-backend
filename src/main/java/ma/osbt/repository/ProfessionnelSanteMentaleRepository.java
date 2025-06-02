@@ -1,6 +1,7 @@
 package ma.osbt.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -13,5 +14,6 @@ public interface ProfessionnelSanteMentaleRepository extends JpaRepository<Profe
 	List<ProfessionnelSanteMentale> findByStatutValidation(StatutValidation statut);
     List<ProfessionnelSanteMentale> findBySpecialiteContainingIgnoreCase(String specialite);
     List<ProfessionnelSanteMentale> findByNomContainingIgnoreCase(String nom);
+    Optional<ProfessionnelSanteMentale> findByEmail(String email);
     
 }
