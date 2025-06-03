@@ -21,6 +21,7 @@ public class FonctionnaliteController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<Fonctionnalite> listFonctionnalites() {
+    	
         return fonctionnaliteService.listFonctionnalites();
     }
 

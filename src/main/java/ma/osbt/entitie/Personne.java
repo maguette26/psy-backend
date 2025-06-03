@@ -16,7 +16,7 @@ import java.util.Collections;
 @NoArgsConstructor
 @AllArgsConstructor
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "type_personne")
+@DiscriminatorColumn(name = "type_personne",discriminatorType = DiscriminatorType.STRING)
 public abstract class Personne implements UserDetails {
 
     @Id
@@ -36,15 +36,15 @@ public abstract class Personne implements UserDetails {
     private boolean locked = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "role",nullable = false)
     protected Role role;
 
     // 🛡️ Implémentation des méthodes de UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Ajoutez explicitement le préfixe ROLE_
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
-
     @Override
     public String getPassword() {
         return motDePasse;

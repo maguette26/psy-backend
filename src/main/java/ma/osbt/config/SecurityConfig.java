@@ -17,10 +17,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -32,11 +35,13 @@ public class SecurityConfig {
         this.userDetailsService = userDetailsService;
     }
 
+    // 🔐 Encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // 🔐 Auth Provider
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -45,12 +50,19 @@ public class SecurityConfig {
         return authProvider;
     }
 
+    // 🔐 Auth Manager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // 🔐 API FilterChain sécurisée
+    // 📦 Stockage session Spring Security
+    @Bean
+    public SecurityContextRepository securityContextRepository() {
+        return new HttpSessionSecurityContextRepository();
+    }
+
+    // 🔐 API FilterChain
     @Bean
     @Order(1)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
@@ -62,23 +74,24 @@ public class SecurityConfig {
             .securityMatcher("/api/**")
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+            .securityContext(securityContext -> securityContext
+                .securityContextRepository(securityContextRepository()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
-                .requestMatchers("/api/utilisateurs/**", "/api/fonctionnalites/**").hasRole("ADMIN")
-                .requestMatchers("/api/professionnels/**").permitAll()
-                .requestMatchers("/api/messages/**").authenticated()
-                .anyRequest().authenticated()
-            )
+                .requestMatchers("/api/fonctionnalites/**", "/api/utilisateurs/**").hasRole("ADMIN")
+                .requestMatchers("/api/professionnels/inscription").permitAll()
+                .requestMatchers("/api/professionnels/en-attente").permitAll()
+                .requestMatchers("/api/me").authenticated()
+                .anyRequest().authenticated())
+            .authenticationProvider(authenticationProvider())
             .addFilterAt(jsonAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            // Gestion du logout
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
                 .addLogoutHandler(logoutHandler())
                 .logoutSuccessHandler(logoutSuccessHandler())
-                .permitAll()
-            )
-            .authenticationProvider(authenticationProvider());
+                .permitAll());
 
         return http.build();
     }
@@ -86,58 +99,58 @@ public class SecurityConfig {
     // 🌐 WebSocket FilterChain
     @Bean
     @Order(2)
-    public SecurityFilterChain webSocketFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain wsFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/ws-message/**", "/topic/**", "/app/**")
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
-
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS));
         return http.build();
     }
 
-    // 🧩 Default FilterChain (fallback)
+    // 🌐 Web UI fallback
     @Bean
     @Order(3)
     public SecurityFilterChain defaultFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-            .logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/").permitAll())
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
-
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS));
         return http.build();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://192.168.1.122", "http://192.168.1.98"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-
-    // Invalidation de session lors du logout
+    // 🔓 Logout Handler
     @Bean
     public LogoutHandler logoutHandler() {
-        return new SecurityContextLogoutHandler();
+        return (request, response, authentication) -> {
+            if (authentication != null) {
+                new SecurityContextLogoutHandler().logout(request, response, authentication);
+            }
+        };
     }
 
-    // Réponse JSON après logout réussi
+    // 🔓 Logout Success Handler
     @Bean
     public LogoutSuccessHandler logoutSuccessHandler() {
         return (request, response, authentication) -> {
             response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"message\": \"Déconnexion réussie\"}");
+            response.getWriter().write("Déconnexion réussie");
         };
+    }
+
+    // 🌍 CORS
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://192.168.1.122", "http://192.168.1.98"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+        config.setExposedHeaders(List.of("Authorization"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }

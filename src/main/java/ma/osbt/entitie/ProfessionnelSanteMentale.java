@@ -2,7 +2,6 @@ package ma.osbt.entitie;
 
 import java.util.List;
 
-
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,6 +17,7 @@ import lombok.NoArgsConstructor;
 @DiscriminatorValue(value="PROFESSIONNEL")
 public class ProfessionnelSanteMentale extends Personne {
 	private String specialite;
+	private String documentJustificatif;
 		
 	@OneToMany(mappedBy = "professionnel")
 	private List<Consultation> consultations;
@@ -34,8 +34,8 @@ public class ProfessionnelSanteMentale extends Personne {
     @Enumerated(EnumType.STRING)
     private StatutValidation statutValidation = StatutValidation.EN_ATTENTE;
     
-    @OneToMany(mappedBy = "professionnel")
-    private List<DocumentJustificatif> document;
+     
+
     
     @OneToMany(mappedBy = "professionnel")
     private List<Disponibilite> disponibilites;

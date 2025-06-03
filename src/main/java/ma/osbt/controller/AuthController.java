@@ -1,16 +1,13 @@
 package ma.osbt.controller;
 
-import java.util.HashMap;
+ 
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -22,7 +19,6 @@ import lombok.NoArgsConstructor;
 import ma.osbt.entitie.Role;
 import ma.osbt.entitie.Utilisateur;
 import ma.osbt.repository.UtilisateurRepository;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -38,10 +34,9 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    
 
-     
+
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Validated @RequestBody RegisterRequest signUpRequest) {
 
@@ -83,6 +78,19 @@ public class AuthController {
             return ResponseEntity.badRequest().body(errorMessage);
         }
     }
+    @GetMapping("/me")
+    public Map<String, Object> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Map.of("authenticated", false);
+        }
+
+        return Map.of(
+            "authenticated", true,
+            "email", authentication.getName(),
+            "roles", authentication.getAuthorities()
+        );
+    }
+
 
     // DTOs
     @Data

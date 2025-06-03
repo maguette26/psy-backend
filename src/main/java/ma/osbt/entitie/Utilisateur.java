@@ -9,9 +9,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import lombok.ToString;
+
 @Entity
 @Data
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @DiscriminatorValue(value="UTILISATEUR")
 public class Utilisateur extends Personne {
     
@@ -19,13 +22,16 @@ public class Utilisateur extends Personne {
 
     @OneToMany(mappedBy = "utilisateur")
     @JsonIgnore
+    @ToString.Exclude
     private List<Reservation> reservations;
 
     @JsonIgnore
     @OneToMany(mappedBy = "expediteur")
+    @ToString.Exclude
     private List<Message> messagesEnvoyes;
 
     @JsonIgnore
     @OneToMany(mappedBy = "destinataire")
+    @ToString.Exclude
     private List<Message> messagesRecus;
 }

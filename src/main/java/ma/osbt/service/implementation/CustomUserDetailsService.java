@@ -1,6 +1,8 @@
 package ma.osbt.service.implementation;
 
 import ma.osbt.entitie.Personne;
+import ma.osbt.entitie.ProfessionnelSanteMentale;
+import ma.osbt.entitie.StatutValidation;
 import ma.osbt.repository.UtilisateurRepository;
 
  
@@ -21,17 +23,19 @@ public class CustomUserDetailsService implements UserDetailsService {
     public CustomUserDetailsService(UtilisateurRepository utilisateurRepository) {
         this.utilisateurRepository = utilisateurRepository;
     }
+     
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         Personne utilisateur = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+        if (utilisateur instanceof ProfessionnelSanteMentale professionnel) {
+            if (professionnel.getStatutValidation() != StatutValidation.VALIDE) {
+                throw new UsernameNotFoundException("Professionnel non validé par l'administrateur");
+            }
+        }
 
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(utilisateur.getEmail())
-                .password(utilisateur.getMotDePasse()) 
-                .roles(utilisateur.getRole().name())
-               // .authorities("ROLE_" + utilisateur.getRole().name())
-                .build();
+        return utilisateur;   
     }
+
 
 }
