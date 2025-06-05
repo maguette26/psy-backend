@@ -34,4 +34,8 @@ public class Utilisateur extends Personne {
     @OneToMany(mappedBy = "destinataire")
     @ToString.Exclude
     private List<Message> messagesRecus;
+    @ToString.Exclude
+    @JsonIgnore
+    @OneToMany(mappedBy = "utilisateur")
+    private List<Humeur> humeurs;
 }

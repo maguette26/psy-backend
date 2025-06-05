@@ -42,7 +42,9 @@ public abstract class Personne implements UserDetails {
     // 🛡️ Implémentation des méthodes de UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Ajoutez explicitement le préfixe ROLE_
+    	if (this.role == null) {
+            return Collections.emptyList();  
+        }
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
     @Override

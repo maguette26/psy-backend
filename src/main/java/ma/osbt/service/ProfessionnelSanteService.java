@@ -8,8 +8,9 @@ import ma.osbt.entitie.StatutValidation;
 public interface ProfessionnelSanteService {
 	
 	public ProfessionnelSanteMentale saveProfessionnel(ProfessionnelSanteMentale professionnel);
-	public    List<ProfessionnelSanteMentale> getProfessionnelsEnAttente();
-	public   ProfessionnelSanteMentale updateStatutValidation(Long id, StatutValidation statut);
+	public List<ProfessionnelSanteMentale> getProfessionnelsEnAttente();
+    public List<ProfessionnelSanteMentale> getAllProfessionnels();
+	public ProfessionnelSanteMentale updateStatutValidation(Long id, StatutValidation statut);
 	 
      
 }

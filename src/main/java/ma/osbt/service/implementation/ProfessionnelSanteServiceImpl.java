@@ -36,4 +36,10 @@ public class ProfessionnelSanteServiceImpl implements ProfessionnelSanteService 
         p.setStatutValidation(statut);
         return professionnelRepo.save(p);
     }  
+    @Override
+    public List<ProfessionnelSanteMentale> getAllProfessionnels() {
+        return professionnelRepo.findAll();
+    }
+    
+
 }

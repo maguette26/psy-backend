@@ -1,45 +1,102 @@
 package ma.osbt.service.implementation;
 
- 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import ma.osbt.entitie.Reservation;
-import ma.osbt.repository.ReservationRepository;
-import ma.osbt.service.ReservationService;
-
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ma.osbt.entitie.Consultation;
+import ma.osbt.entitie.Reservation;
+import ma.osbt.entitie.ProfessionnelSanteMentale;
+import ma.osbt.repository.ConsultationRepository;
+import ma.osbt.repository.ProfessionnelSanteMentaleRepository;
+import ma.osbt.repository.ReservationRepository;
+import ma.osbt.repository.UtilisateurRepository;
+import ma.osbt.service.NotificationService;
+import ma.osbt.service.ReservationService;
 @Service
+@Transactional
 public class ReservationServiceImpl implements ReservationService {
-	  @Autowired
-	    private ReservationRepository reservationRepository;
-	  public List<Reservation> getAllReservations() {
-	        return reservationRepository.findAll();
-	    }
 
-	    public Optional<Reservation> getReservationById(Long id) {
-	        return reservationRepository.findById(id);
-	    }
+    private final ReservationRepository reservationRepository;
+    private final ConsultationRepository consultationRepository;
+    private final NotificationService notificationService;
+    public ReservationServiceImpl(UtilisateurRepository utilisateurRepository,
+                                  ReservationRepository reservationRepository,
+                                  ConsultationRepository consultationRepository,
+                                  NotificationService notificationService,
+                                  ProfessionnelSanteMentaleRepository professionnelRepository) {
+        this.reservationRepository = reservationRepository;
+        this.consultationRepository = consultationRepository;
+        this.notificationService = notificationService;
+    }
 
-	    public Reservation createReservation(Reservation reservation) {
-	        reservation.setStatut("en_attente");  
-	        return reservationRepository.save(reservation);
-	    }
+    @Override
+    public Reservation save(Reservation reservation) {
+        return reservationRepository.save(reservation);
+    }
 
-	    public Reservation updateReservation(Long id, Reservation updatedReservation) {
-	        return reservationRepository.findById(id).map(res -> {
-	            res.setPrix(updatedReservation.getPrix());
-	            res.setStatut(updatedReservation.getStatut());
-	            res.setDateReservation(updatedReservation.getDateReservation());
-	            res.setUtilisateur(updatedReservation.getUtilisateur());
-	            res.setProfessionnel(updatedReservation.getProfessionnel());
-	            return reservationRepository.save(res);
-	        }).orElse(null);
-	    }
+    @Override
+    public Optional<Reservation> getById(Long id) {
+        return reservationRepository.findById(id);
+    }
 
-	    public void deleteReservation(Long id) {
-	        reservationRepository.deleteById(id);
-	    }
+    @Override
+    public List<Reservation> getReservationsPourPro(ProfessionnelSanteMentale professionnel) {
+        return reservationRepository.findByProfessionnel(professionnel);
+    }
+
+    @Override
+    public Reservation validerOuRefuserReservation(Long id, String statut, ProfessionnelSanteMentale professionnel) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation non trouvée"));
+
+        if (!reservation.getProfessionnel().getId().equals(professionnel.getId())) {
+            throw new RuntimeException("Action non autorisée");
+        }
+
+        reservation.setStatut(statut.toUpperCase());
+        reservationRepository.save(reservation);
+
+        if ("VALIDE".equalsIgnoreCase(statut)) {
+            Consultation consultation = new Consultation();
+            consultation.setDateConsultation(reservation.getDateReservation());
+            consultation.setHeure(java.time.LocalTime.now());
+            consultation.setProfessionnel(professionnel);
+            consultation.setReservation(reservation);
+            consultationRepository.save(consultation);
+
+            notificationService.notifierUtilisateur(reservation.getUtilisateur(),
+                    "Votre réservation a été validée et la consultation est planifiée.");
+        } else if ("REFUSE".equalsIgnoreCase(statut)) {
+            notificationService.notifierUtilisateur(reservation.getUtilisateur(),
+                    "Votre réservation a été refusée par le professionnel.");
+        }
+
+        return reservation;
+    }
+
+    @Override
+    public List<Reservation> getReservationsPourUtilisateur(Long utilisateurId) {
+        return reservationRepository.findByUtilisateurId(utilisateurId);
+    }
+
+    @Override
+    public Reservation annulerReservation(Long reservationId, Long utilisateurId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Réservation introuvable"));
+
+        if (!reservation.getUtilisateur().getId().equals(utilisateurId)) {
+            throw new RuntimeException("Action non autorisée");
+        }
+
+        if (!reservation.getStatut().equalsIgnoreCase("EN_ATTENTE")) {
+            throw new RuntimeException("Seules les réservations en attente peuvent être annulées.");
+        }
+
+        reservation.setStatut("ANNULEE");
+        return reservationRepository.save(reservation);
+    }
+
 }
-

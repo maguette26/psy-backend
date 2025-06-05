@@ -55,5 +55,26 @@ public class FonctionnaliteServiceImpl implements FonctionnaliteService{
 		fonctionnaliteRepository.deleteById(id);
 		
 	}
+	
+	@Override
+	public List<Fonctionnalite> listCitations() {
+	    return fonctionnaliteRepository.findByTypeAndPremiumFalseAndStatutTrue("CITATION");
+	}
+
+	@Override
+	public List<Fonctionnalite> listRessources() {
+	    return fonctionnaliteRepository.findByTypeAndPremiumFalseAndStatutTrue("RESSOURCE");
+	}
+	@Override
+	public List<Fonctionnalite> listRessourcesParCategorie(String categorie) {
+	    return fonctionnaliteRepository.findByCategorieAndTypeAndPremiumFalseAndStatutTrue(
+	        categorie, "RESSOURCE"
+	    );
+	}
+	@Override
+	public List<Fonctionnalite> listPremiumParType(String type) {
+	    return fonctionnaliteRepository.findByTypeAndPremiumTrueAndStatutTrue(type);
+	}
+
 
 }

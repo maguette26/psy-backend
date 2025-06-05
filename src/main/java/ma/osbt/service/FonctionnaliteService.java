@@ -11,4 +11,9 @@ public interface FonctionnaliteService {
 	public Fonctionnalite ajouterFonctionnalite(Fonctionnalite fonctionnalite);
 	public void modifierFonctionnalite(Fonctionnalite fonctionnalite); 
 	public void supprimerFonctionnalite(Long id);
+	public List<Fonctionnalite> listCitations();
+	public List<Fonctionnalite> listRessources();
+    public List<Fonctionnalite> listRessourcesParCategorie(String categorie);
+    public List<Fonctionnalite> listPremiumParType(String type);
+
 }

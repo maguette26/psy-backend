@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import ma.osbt.entitie.Role;
 import ma.osbt.entitie.Utilisateur;
 import ma.osbt.service.UtilisateurService;
 
@@ -36,6 +37,9 @@ public class UtilisateurController {
   
     @PostMapping
     public ResponseEntity<Utilisateur> createUtilisateur(@RequestBody Utilisateur utilisateur) {
+        if (utilisateur.getRole() == null) {
+            utilisateur.setRole(Role.USER); // ou un autre rôle par défaut
+        }
         Utilisateur savedUtilisateur = utilisateurService.saveUtilisateur(utilisateur);
         return ResponseEntity.ok(savedUtilisateur);
     }

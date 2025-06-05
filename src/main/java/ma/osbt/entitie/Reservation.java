@@ -25,9 +25,10 @@ public class Reservation  {
 	private String statut;
 	private Date dateReservation;
 	@ManyToOne
-    @JoinColumn(name = "utilisateur_id")
+	@JoinColumn(name = "utilisateur_id", referencedColumnName = "id")
     private Utilisateur utilisateur;
 	@ManyToOne
+	@JoinColumn(name = "professionnel_id", referencedColumnName = "id")
 	private ProfessionnelSanteMentale professionnel;
 	@OneToOne(mappedBy = "reservation" )
 	private Consultation consultation;

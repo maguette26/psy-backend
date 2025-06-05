@@ -3,12 +3,16 @@ package ma.osbt.service;
 import java.util.List;
 import java.util.Optional;
 
+import ma.osbt.entitie.ProfessionnelSanteMentale;
 import ma.osbt.entitie.Reservation;
 
 public interface ReservationService {
-	public List<Reservation> getAllReservations();
-	 public Optional<Reservation> getReservationById(Long id);
-	 public Reservation createReservation(Reservation reservation); 
-	 public Reservation updateReservation(Long id, Reservation updatedReservation);
-	  public void deleteReservation(Long id);
+	Reservation save(Reservation reservation);
+    Optional<Reservation> getById(Long id);
+    List<Reservation> getReservationsPourPro(ProfessionnelSanteMentale professionnel);
+    Reservation validerOuRefuserReservation(Long id, String statut, ProfessionnelSanteMentale professionnel);
+    List<Reservation> getReservationsPourUtilisateur(Long utilisateurId);
+    Reservation annulerReservation(Long reservationId, Long utilisateurId);
+
+
  }

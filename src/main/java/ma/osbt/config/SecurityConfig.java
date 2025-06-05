@@ -74,21 +74,27 @@ public class SecurityConfig {
             .securityContext(context -> context.securityContextRepository(securityContextRepository()))
             .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint()))
             .authorizeHttpRequests(auth -> auth
-                // Accès public
+                // Accès public aux endpoints d'authentification et fonctionnalités publiques
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/public/**",
                     "/api/professionnels/inscription",
-                    "/api/professionnels/en-attente"
+                    "/api/fonctionnalites/citations",
+                    "/api/fonctionnalites/ressources/**"
                 ).permitAll()
 
-                // Accès GET pour utilisateurs authentifiés (liste et détail des fonctionnalités)
+                // Accès public en lecture aux fonctionnalités premium (GET)
+                .requestMatchers(HttpMethod.GET, "/api/fonctionnalites/premium/**").permitAll()
+
+                // Accès GET aux autres fonctionnalités nécessite authentification
                 .requestMatchers(HttpMethod.GET, "/api/fonctionnalites/**").authenticated()
-
-                // Accès complet aux fonctionnalités et utilisateurs uniquement pour ADMIN
-                .requestMatchers("/api/fonctionnalites/**", "/api/utilisateurs/**").hasRole("ADMIN")
-
-                // Autres règles
+                .requestMatchers("/api/fonctionnalites/premium/**").hasAnyRole("PREMIUM", "ADMIN")
+                .requestMatchers("/api/professionnels/en-attente", "/api/professionnels/tous","/api/fonctionnalites/**", "/api/utilisateurs/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/professionnels/validation/*").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/professionnels/fichiers/**").hasRole("ADMIN")
+                .requestMatchers("/api/fonctionnalites/premium/access/**").hasAnyRole("PREMIUM", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/fonctionnalites/upgrade-to-premium/**").hasRole("ADMIN")
+                .requestMatchers("/api/humeurs/**", "/api/reservations/utilisateur/*","/api/reservations/annuler/*" ).hasRole("USER")
                 .requestMatchers("/api/disponibilites/**").hasAnyRole("PSYCHOLOGUE", "PSYCHIATRE")
                 .requestMatchers("/api/auth/me").authenticated()
                 .anyRequest().authenticated()
@@ -104,6 +110,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 
     @Bean
     @Order(2)

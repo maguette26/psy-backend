@@ -21,5 +21,6 @@ public class Fonctionnalite {
 	private String description;
 	private boolean premium;
 	private boolean statut;
-
+	private String lienFichier;  
+	private String categorie;
 }
