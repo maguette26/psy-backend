@@ -1,8 +1,10 @@
- package ma.osbt.service.implementation;
+package ma.osbt.service.implementation;
 
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import ma.osbt.entitie.Disponibilite;
@@ -10,7 +12,6 @@ import ma.osbt.entitie.ProfessionnelSanteMentale;
 import ma.osbt.repository.DisponibiliteRepository;
 import ma.osbt.repository.ProfessionnelSanteMentaleRepository;
 import ma.osbt.service.DisponibiliteService;
- 
 
 @Service
 public class DisponibiliteServiceImpl implements DisponibiliteService {
@@ -22,10 +23,20 @@ public class DisponibiliteServiceImpl implements DisponibiliteService {
     private ProfessionnelSanteMentaleRepository professionnelRepository;
 
     @Autowired
-    private UtilisateurConnecteService  utilisateurConnecteService;
+    private UtilisateurConnecteService utilisateurConnecteService;
+
+    private boolean hasRole(String role) {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(r -> r.equals("ROLE_" + role));
+    }
 
     @Override
     public Disponibilite ajouterDisponibilite(Disponibilite disponibilite) {
+        if (!(hasRole("PSYCHOLOGUE") || hasRole("PSYCHIATRE"))) {
+            throw new RuntimeException("Accès refusé : rôle insuffisant");
+        }
+
         String email = utilisateurConnecteService.getEmailConnecte();
         ProfessionnelSanteMentale professionnel = professionnelRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Professionnel non trouvé"));
@@ -36,6 +47,10 @@ public class DisponibiliteServiceImpl implements DisponibiliteService {
 
     @Override
     public List<Disponibilite> getDisponibilitesProfessionnelConnecte() {
+        if (!(hasRole("PSYCHOLOGUE") || hasRole("PSYCHIATRE"))) {
+            throw new RuntimeException("Accès refusé : rôle insuffisant");
+        }
+
         String email = utilisateurConnecteService.getEmailConnecte();
         ProfessionnelSanteMentale professionnel = professionnelRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Professionnel non trouvé"));
@@ -45,6 +60,10 @@ public class DisponibiliteServiceImpl implements DisponibiliteService {
 
     @Override
     public Disponibilite modifierDisponibilite(Long id, Disponibilite updated) {
+        if (!(hasRole("PSYCHOLOGUE") || hasRole("PSYCHIATRE"))) {
+            throw new RuntimeException("Accès refusé : rôle insuffisant");
+        }
+
         String email = utilisateurConnecteService.getEmailConnecte();
         Disponibilite dispo = disponibiliteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Disponibilité non trouvée"));
@@ -61,6 +80,10 @@ public class DisponibiliteServiceImpl implements DisponibiliteService {
 
     @Override
     public void supprimerDisponibilite(Long id) {
+        if (!(hasRole("PSYCHOLOGUE") || hasRole("PSYCHIATRE"))) {
+            throw new RuntimeException("Accès refusé : rôle insuffisant");
+        }
+
         String email = utilisateurConnecteService.getEmailConnecte();
         Disponibilite dispo = disponibiliteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Disponibilité non trouvée"));

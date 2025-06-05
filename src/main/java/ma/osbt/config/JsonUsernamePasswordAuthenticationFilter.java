@@ -13,6 +13,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 import java.io.IOException;
 import java.util.Map;
@@ -52,16 +53,11 @@ public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAu
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authResult);
         SecurityContextHolder.setContext(context);
-
+        request.getSession(true)
+        .setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
         // Forcer la création de session
         request.getSession(true);
-
-        // Ajouter manuellement un cookie pour tester
-        /*Cookie sessionCookie = new Cookie("JSESSIONID", request.getSession(false).getId());
-        sessionCookie.setHttpOnly(true);
-        sessionCookie.setPath("/");
-        sessionCookie.setMaxAge(-1); // session cookie
-       response.addCookie(sessionCookie);*/ 
+ 
 
         logger.info("User roles: " + authResult.getAuthorities());
 

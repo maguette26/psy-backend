@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -12,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
@@ -23,7 +25,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -35,13 +36,11 @@ public class SecurityConfig {
         this.userDetailsService = userDetailsService;
     }
 
-    // 🔐 Encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 🔐 Auth Provider
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -50,19 +49,16 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    // 🔐 Auth Manager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // 📦 Stockage session Spring Security
     @Bean
     public SecurityContextRepository securityContextRepository() {
         return new HttpSessionSecurityContextRepository();
     }
 
-    // 🔐 API FilterChain
     @Bean
     @Order(1)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
@@ -74,29 +70,41 @@ public class SecurityConfig {
             .securityMatcher("/api/**")
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
-            .securityContext(securityContext -> securityContext
-                .securityContextRepository(securityContextRepository()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+            .securityContext(context -> context.securityContextRepository(securityContextRepository()))
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
+                // Accès public
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/api/public/**",
+                    "/api/professionnels/inscription",
+                    "/api/professionnels/en-attente"
+                ).permitAll()
+
+                // Accès GET pour utilisateurs authentifiés (liste et détail des fonctionnalités)
+                .requestMatchers(HttpMethod.GET, "/api/fonctionnalites/**").authenticated()
+
+                // Accès complet aux fonctionnalités et utilisateurs uniquement pour ADMIN
                 .requestMatchers("/api/fonctionnalites/**", "/api/utilisateurs/**").hasRole("ADMIN")
-                .requestMatchers("/api/professionnels/inscription").permitAll()
-                .requestMatchers("/api/professionnels/en-attente").permitAll()
-                .requestMatchers("/api/me").authenticated()
-                .anyRequest().authenticated())
+
+                // Autres règles
+                .requestMatchers("/api/disponibilites/**").hasAnyRole("PSYCHOLOGUE", "PSYCHIATRE")
+                .requestMatchers("/api/auth/me").authenticated()
+                .anyRequest().authenticated()
+            )
             .authenticationProvider(authenticationProvider())
             .addFilterAt(jsonAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
                 .addLogoutHandler(logoutHandler())
                 .logoutSuccessHandler(logoutSuccessHandler())
-                .permitAll());
+                .permitAll()
+            );
 
         return http.build();
     }
 
-    // 🌐 WebSocket FilterChain
     @Bean
     @Order(2)
     public SecurityFilterChain wsFilterChain(HttpSecurity http) throws Exception {
@@ -108,7 +116,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🌐 Web UI fallback
     @Bean
     @Order(3)
     public SecurityFilterChain defaultFilterChain(HttpSecurity http) throws Exception {
@@ -120,7 +127,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🔓 Logout Handler
     @Bean
     public LogoutHandler logoutHandler() {
         return (request, response, authentication) -> {
@@ -130,7 +136,6 @@ public class SecurityConfig {
         };
     }
 
-    // 🔓 Logout Success Handler
     @Bean
     public LogoutSuccessHandler logoutSuccessHandler() {
         return (request, response, authentication) -> {
@@ -139,18 +144,28 @@ public class SecurityConfig {
         };
     }
 
-    // 🌍 CORS
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return (request, response, authException) -> {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Accès interdit - " + authException.getMessage() + "\"}");
+        };
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
         config.setAllowedOrigins(List.of("http://localhost:5173", "http://192.168.1.122", "http://192.168.1.98"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*")); // ← important pour éviter les erreurs CORS
         config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
 }

@@ -12,12 +12,11 @@ import ma.osbt.service.DisponibiliteService;
 @RestController
 @RequestMapping("/api/disponibilites")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class DisponibiliteController {
 
     private final DisponibiliteService disponibiliteService;
 
-    @PostMapping
+    @PostMapping()
     public ResponseEntity<Disponibilite> ajouter(@RequestBody Disponibilite disponibilite) {
         return ResponseEntity.ok(disponibiliteService.ajouterDisponibilite(disponibilite));
     }
@@ -37,4 +36,5 @@ public class DisponibiliteController {
         disponibiliteService.supprimerDisponibilite(id);
         return ResponseEntity.noContent().build();
     }
+
 }

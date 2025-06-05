@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,6 +20,7 @@ import lombok.NoArgsConstructor;
 import ma.osbt.entitie.Role;
 import ma.osbt.entitie.Utilisateur;
 import ma.osbt.repository.UtilisateurRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -78,18 +80,29 @@ public class AuthController {
             return ResponseEntity.badRequest().body(errorMessage);
         }
     }
-    @GetMapping("/me")
-    public Map<String, Object> getCurrentUser(Authentication authentication) {
+    @GetMapping("me")
+    public ResponseEntity<?> getAuthenticatedUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
-            return Map.of("authenticated", false);
+            return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED).body(
+                Map.of("authenticated", false)
+            );
         }
 
-        return Map.of(
-            "authenticated", true,
-            "email", authentication.getName(),
-            "roles", authentication.getAuthorities()
-        );
+        String email = authentication.getName();
+        String role = authentication.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .map(auth -> auth.startsWith("ROLE_") ? auth.substring(5) : auth)
+                .findFirst()
+                .orElse("UNKNOWN");
+
+        return ResponseEntity.ok(Map.of(
+                "authenticated", true,
+                "email", email,
+                "role", role
+        ));
     }
+
 
 
     // DTOs

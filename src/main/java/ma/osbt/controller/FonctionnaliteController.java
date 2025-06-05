@@ -2,7 +2,7 @@ package ma.osbt.controller;
 
 import java.util.List;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.*;
 
 import ma.osbt.entitie.Fonctionnalite;
@@ -18,7 +18,7 @@ public class FonctionnaliteController {
         this.fonctionnaliteService = fonctionnaliteService;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    
     @GetMapping
     public List<Fonctionnalite> listFonctionnalites() {
     	
