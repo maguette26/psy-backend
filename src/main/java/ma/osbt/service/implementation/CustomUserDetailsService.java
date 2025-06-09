@@ -1,12 +1,10 @@
 package ma.osbt.service.implementation;
 
 import ma.osbt.entitie.Personne;
+
 import ma.osbt.entitie.ProfessionnelSanteMentale;
 import ma.osbt.entitie.StatutValidation;
 import ma.osbt.repository.PersonneRepository;
-import ma.osbt.repository.UtilisateurRepository;
-
- 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

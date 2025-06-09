@@ -3,8 +3,6 @@ package ma.osbt.entitie;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -23,6 +21,7 @@ import lombok.ToString;
 public class ProfessionnelSanteMentale extends Personne {
 	private String specialite;
 	private String documentJustificatif;
+    private Double prixConsultation=0.0;;
 		
 	@OneToMany(mappedBy = "professionnel")
 	@JsonIgnore

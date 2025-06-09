@@ -24,6 +24,7 @@ public class Consultation {
 private Long idConsultation;
 private Date dateConsultation;
 private LocalTime heure; 
+private Double prix;
 
 @ManyToOne()
 private ProfessionnelSanteMentale professionnel;

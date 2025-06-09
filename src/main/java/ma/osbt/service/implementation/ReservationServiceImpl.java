@@ -3,6 +3,7 @@ package ma.osbt.service.implementation;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +19,11 @@ import ma.osbt.service.ReservationService;
 @Service
 @Transactional
 public class ReservationServiceImpl implements ReservationService {
-
-    private final ReservationRepository reservationRepository;
-    private final ConsultationRepository consultationRepository;
-    private final NotificationService notificationService;
+	@Autowired
+	private   ProfessionnelSanteMentaleRepository professionnelRepository;
+    private  ReservationRepository reservationRepository;
+    private   ConsultationRepository consultationRepository;
+    private   NotificationService notificationService;
     public ReservationServiceImpl(UtilisateurRepository utilisateurRepository,
                                   ReservationRepository reservationRepository,
                                   ConsultationRepository consultationRepository,
@@ -34,9 +36,17 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public Reservation save(Reservation reservation) {
+        Long proId = reservation.getProfessionnel().getId();
+        ProfessionnelSanteMentale pro = professionnelRepository.findById(proId)
+            .orElseThrow(() -> new RuntimeException("Pro non trouvé"));
+        
+        reservation.setPrix(pro.getPrixConsultation());
+        // autres règles métier...
+        
         return reservationRepository.save(reservation);
     }
 
+    
     @Override
     public Optional<Reservation> getById(Long id) {
         return reservationRepository.findById(id);
@@ -65,11 +75,14 @@ public class ReservationServiceImpl implements ReservationService {
             consultation.setHeure(java.time.LocalTime.now());
             consultation.setProfessionnel(professionnel);
             consultation.setReservation(reservation);
+            consultation.setPrix(reservation.getPrix());
+
             consultationRepository.save(consultation);
 
             notificationService.notifierUtilisateur(reservation.getUtilisateur(),
                     "Votre réservation a été validée et la consultation est planifiée.");
-        } else if ("REFUSE".equalsIgnoreCase(statut)) {
+        }
+ else if ("REFUSE".equalsIgnoreCase(statut)) {
             notificationService.notifierUtilisateur(reservation.getUtilisateur(),
                     "Votre réservation a été refusée par le professionnel.");
         }
@@ -98,5 +111,11 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setStatut("ANNULEE");
         return reservationRepository.save(reservation);
     }
+    public void marquerCommePayee(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId).orElseThrow();
+        reservation.setStatut("PAYEE");
+        reservationRepository.save(reservation);
+    }
+
 
 }

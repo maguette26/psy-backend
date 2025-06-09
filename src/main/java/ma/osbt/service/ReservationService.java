@@ -13,6 +13,6 @@ public interface ReservationService {
     Reservation validerOuRefuserReservation(Long id, String statut, ProfessionnelSanteMentale professionnel);
     List<Reservation> getReservationsPourUtilisateur(Long utilisateurId);
     Reservation annulerReservation(Long reservationId, Long utilisateurId);
-
+    void marquerCommePayee(Long reservationId);
 
  }

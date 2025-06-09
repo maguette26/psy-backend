@@ -1,7 +1,10 @@
 package ma.osbt.entitie;
 
+import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
@@ -38,4 +41,10 @@ public class Utilisateur extends Personne {
     @JsonIgnore
     @OneToMany(mappedBy = "utilisateur")
     private List<Humeur> humeurs;
+    
+    @JsonIgnore
+    @OneToMany(mappedBy = "auteur", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private List<SujetForum> sujets = new ArrayList<>();
+
 }

@@ -21,7 +21,7 @@ public class Reservation  {
 	 @Id
 	 @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	private int prix;
+	private Double prix;
 	private String statut;
 	private Date dateReservation;
 	@ManyToOne

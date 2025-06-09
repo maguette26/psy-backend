@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ma.osbt.entitie.ProfessionnelSanteMentale;
 import ma.osbt.entitie.Role;
 import ma.osbt.entitie.StatutValidation;
+import ma.osbt.repository.ProfessionnelSanteMentaleRepository;
 import ma.osbt.service.ProfessionnelSanteService;
 
 @RestController
@@ -29,7 +31,8 @@ public class ProfessionnelSanteMentaleController {
 
     @Autowired
     private ProfessionnelSanteService service;
-
+    @Autowired
+    private  ProfessionnelSanteMentaleRepository professionnelRepository;
     private final String DOSSIER_UPLOAD = "C:\\Users\\Administrateur\\Documents\\upload\\";
 
     @PostMapping("/inscription")
@@ -119,4 +122,22 @@ public class ProfessionnelSanteMentaleController {
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
             .body(resource);
     }
+    @PatchMapping("/prix-consultation")
+    public ResponseEntity<?> definirPrixConsultation(@AuthenticationPrincipal ProfessionnelSanteMentale pro,
+                                                     @RequestParam Double nouveauPrix) {
+        if (nouveauPrix == null || nouveauPrix < 0) {
+            return ResponseEntity.badRequest().body("Le prix doit être un nombre positif.");
+        }
+
+        pro.setPrixConsultation(nouveauPrix);
+        professionnelRepository.save(pro);
+        return ResponseEntity.ok("Prix de consultation mis à jour avec succès.");
+    }
+
+    // 🔍 Obtenir le prix actuel
+    @GetMapping("/prix-consultation")
+    public ResponseEntity<Double> getPrixConsultation(@AuthenticationPrincipal ProfessionnelSanteMentale pro) {
+        return ResponseEntity.ok(pro.getPrixConsultation());
+    }
+    
 }
